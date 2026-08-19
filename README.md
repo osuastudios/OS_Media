@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="build/icon.png" alt="OS Media" width="220">
-</p>
-
-<h1 align="center">OS Media Tool</h1>
+# OS Media Tool
 
 Descargador interno de vídeo/audio de YouTube y Twitch para el equipo de OSUA. Electron + React + Vite + Tailwind.
 
@@ -59,3 +55,9 @@ No soporta Spotify, Netflix ni ninguna plataforma con DRM. Toda la extracción l
 ## Aviso legal
 
 OS Media es una herramienta de uso personal/interno. No está permitido usarla para descargar, publicar o redistribuir contenido protegido por derechos de autor sin permiso de su titular. El uso de la aplicación es responsabilidad exclusiva de quien la usa; OSUA Studio no se hace responsable del uso que cada persona le dé.
+
+---
+
+<p align="center">
+  <img src="build/icon.png" alt="OS Media" width="140">
+</p>
