@@ -1,4 +1,8 @@
-# OS Media Tool
+<p align="center">
+  <img src="public/favicon.png" alt="OS Media" width="180">
+</p>
+
+<h1 align="center">OS Media Tool</h1>
 
 Descargador interno de vídeo/audio de YouTube y Twitch para el equipo de OSUA. Electron + React + Vite + Tailwind.
 
