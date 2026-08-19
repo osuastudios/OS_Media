@@ -4,7 +4,7 @@ Bienvenido a OsuaStudio Media Tool, desarrollada por OSUA para sus pequeñas cri
 
 ## Instalar
 
-1. Descarga el instalador (`OS Media Setup.exe`).
+1. Descarga el instalador (`OS Media Setup.exe`). El navegador puede avisar de "archivo poco común": pulsa **Ver más** → **Mantener** / **Conservar de todos modos**.
 2. Ábrelo y sigue el asistente (puedes dejar la carpeta por defecto).
 3. Si Windows muestra la pantalla azul "Windows protegió tu PC": pulsa **Más información** → **Ejecutar de todas formas**. Es normal, la app no tiene certificado de pago, no significa que sea insegura.
 4. Al terminar, tendrás **OS Media** en el Escritorio y buscable desde el menú de inicio (tecla Windows → escribe "OS Media").
