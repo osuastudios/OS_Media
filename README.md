@@ -51,3 +51,7 @@ Solo hace falta la primera vez.
 ## Qué NO hace esta app
 
 No soporta Spotify, Netflix ni ninguna plataforma con DRM. Toda la extracción la hace `yt-dlp`; esta app no incluye ningún extractor propio.
+
+## Aviso legal
+
+OS Media es una herramienta de uso personal/interno. No está permitido usarla para descargar, publicar o redistribuir contenido protegido por derechos de autor sin permiso de su titular. El uso de la aplicación es responsabilidad exclusiva de quien la usa; OSUA Studio no se hace responsable del uso que cada persona le dé.

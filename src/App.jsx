@@ -1,3 +1,4 @@
+// OS Media — Made by OSUA Studio
 import { useEffect, useState, useCallback } from 'react';
 import Header from './components/Header';
 import SettingsModal from './components/SettingsModal';

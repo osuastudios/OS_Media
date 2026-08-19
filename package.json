@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Descargador interno de vídeo/audio de YouTube y Twitch",
+  "author": "OSUA Studio",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently -k -n VITE,ELECTRON -c blue,green \"vite\" \"npm:electron:dev\"",
