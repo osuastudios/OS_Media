@@ -23,14 +23,21 @@ No hay firma de código (no hay certificado de pago), así que Windows mostrará
 
 macOS: mismo comando, genera un `.dmg`. Tampoco está firmado, así que Gatekeeper avisará — ver más abajo.
 
-## Saltar el aviso de Windows SmartScreen
+## Saltar los avisos de Windows
 
-Al ejecutar el instalador por primera vez, Windows puede mostrar una pantalla azul "Windows protegió su PC". Esto pasa porque el instalador no tiene firma de un certificado de pago, no porque sea inseguro. Para continuar:
+Como el instalador no tiene firma de un certificado de pago (no porque sea inseguro), pueden salir dos avisos distintos, uno detrás de otro:
 
-1. En la pantalla de SmartScreen, pulsa **"Más información"**.
+**1. Al descargarlo, el navegador (Edge/Chrome) puede avisar de "archivo poco común":**
+
+- Pulsa **"Ver más"** en el aviso de descargas.
+- Elige **"Mantener"** / **"Conservar de todos modos"**.
+
+**2. Al ejecutar el instalador, Windows puede mostrar una pantalla azul "Windows protegió su PC":**
+
+1. Pulsa **"Más información"**.
 2. Aparecerá un botón **"Ejecutar de todas formas"** — púlsalo.
 
-Solo hace falta hacerlo la primera vez que se instala.
+Solo hace falta pasar por esto la primera vez que se descarga/instala.
 
 ## Saltar el aviso de Gatekeeper en macOS
 
