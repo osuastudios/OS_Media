@@ -1,7 +1,7 @@
 {
   "name": "os-media",
   "productName": "OS Media",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Descargador interno de vídeo/audio de YouTube y Twitch",
   "author": "OSUA Studio",
