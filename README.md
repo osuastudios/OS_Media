@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/favicon.png" alt="OS Media" width="180">
+  <img src="build/icon.png" alt="OS Media" width="220">
 </p>
 
 <h1 align="center">OS Media Tool</h1>
