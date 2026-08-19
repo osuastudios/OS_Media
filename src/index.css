@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* Paleta extraída del logo real (Diseño/foto.png, Diseño/fav.png):
+   degradado rosa -> violeta -> azul -> cian sobre fondo azul marino casi negro. */
+@theme {
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-accent-400: #22d3ee;
+  --color-accent-500: #06b6d4;
+  --color-logo-pink: #f472b6;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: #0a0a14;
+}
+
+::selection {
+  background-color: var(--color-brand-500);
+  color: white;
+}
