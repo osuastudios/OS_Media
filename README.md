@@ -1,4 +1,4 @@
-# OS Media
+# OS Media Tool
 
 Descargador interno de vídeo/audio de YouTube y Twitch para el equipo de OSUA. Electron + React + Vite + Tailwind.
 
