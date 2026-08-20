@@ -1,4 +1,5 @@
 import { GearIcon } from './icons';
+import logo from '../assets/logo.png';
 
 export default function Header({ onOpenSettings }) {
   return (
@@ -9,7 +10,7 @@ export default function Header({ onOpenSettings }) {
       <div className="relative flex items-center justify-between">
         <div className="flex items-center gap-3.5">
           <img
-            src="/favicon.png"
+            src={logo}
             alt="OS Media"
             className="h-14 w-14 shrink-0 rounded-xl object-cover shadow-lg shadow-brand-600/30 ring-1 ring-white/10"
           />
