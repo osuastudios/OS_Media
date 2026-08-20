@@ -16,8 +16,18 @@ function buildDownloadArgs({ url, destDir, filenameTemplate, quality, mode, cook
   if (mode === 'audio') {
     args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0', '--embed-thumbnail', '--add-metadata');
   } else {
+    // Se fuerza vídeo H.264 (avc1) + audio AAC (mp4a) siempre que sea posible: es el
+    // combo compatible con editores como Premiere. YouTube también ofrece VP9/AV1,
+    // más eficientes pero que Premiere rechaza con "tipo de compresión no admitido".
+    // "bv" (sin *) es importante: con "bv*" yt-dlp puede colar formatos combinados
+    // antiguos (como el itag 18) que además son más propensos a bloqueos.
     const height = QUALITY_HEIGHTS[quality] ?? null;
-    const format = height ? `bv*[height<=${height}]+ba/b` : 'bv*+ba/b';
+    const heightFilter = height ? `[height<=${height}]` : '';
+    // Algunos clientes de YouTube (p. ej. con cookies activas) solo ofrecen
+    // formatos ya combinados (vídeo+audio en uno), sin pistas por separado.
+    // Por eso hay un tercer nivel "b[vcodec^=avc1]" antes de rendirse del
+    // todo con "b", para seguir prefiriendo H.264 en ese caso también.
+    const format = `bv[vcodec^=avc1]${heightFilter}+ba[acodec^=mp4a]/bv${heightFilter}+ba/b[vcodec^=avc1]/b`;
     args.push('-f', format, '--merge-output-format', 'mp4');
   }
 
