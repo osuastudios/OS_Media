@@ -5,11 +5,13 @@ const fs = require('fs');
 const { ensureBinaries, checkAndUpdateYtDlp, getInstalledYtDlpVersion, getFfmpegPath, getDenoPath } = require('./binaries');
 const { startDownload } = require('./ytdlp');
 const { readSettings, writeSettings } = require('./settings');
+const { GIF_PRESETS, convertToGif } = require('./gif');
 
 const isDev = process.env.NODE_ENV === 'development';
 
 let mainWindow;
 const activeDownloads = new Map();
+const activeGifConversions = new Map();
 
 const iconPath = path.join(__dirname, '..', 'build', 'icon.png');
 
@@ -150,6 +152,60 @@ ipcMain.handle('download:cancel', async (_event, id) => {
   if (proc) {
     proc.kill();
     activeDownloads.delete(id);
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('gif:get-presets', async () => GIF_PRESETS);
+
+ipcMain.handle('dialog:choose-video', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'Vídeos', extensions: ['mp4', 'mov', 'mkv', 'webm', 'avi', 'm4v'] }],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
+});
+
+ipcMain.handle('gif:convert', async (_event, { inputPath, presetKey }) => {
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const { promise, cancel } = convertToGif({
+    inputPath,
+    presetKey,
+    onProgress: (progress) => {
+      mainWindow?.webContents.send('gif:progress', { id, ...progress });
+    },
+  });
+
+  activeGifConversions.set(id, cancel);
+
+  promise
+    .then(({ outputPath, sizeBytes }) => {
+      mainWindow?.webContents.send('gif:done', { id, ok: true, outputPath, sizeBytes });
+    })
+    .catch((err) => {
+      if (err.cancelled) return;
+      mainWindow?.webContents.send('gif:done', {
+        id,
+        ok: false,
+        message: 'No se pudo convertir el vídeo a GIF. Comprueba que el archivo es un vídeo válido.',
+        details: err.message,
+      });
+    })
+    .finally(() => {
+      activeGifConversions.delete(id);
+    });
+
+  return { id };
+});
+
+ipcMain.handle('gif:cancel', async (_event, id) => {
+  const cancel = activeGifConversions.get(id);
+  if (cancel) {
+    cancel();
+    activeGifConversions.delete(id);
     return true;
   }
   return false;

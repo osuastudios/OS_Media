@@ -22,4 +22,11 @@ contextBridge.exposeInMainWorld('api', {
   cancelDownload: (id) => ipcRenderer.invoke('download:cancel', id),
   onDownloadProgress: (callback) => subscribe('download:progress', callback),
   onDownloadDone: (callback) => subscribe('download:done', callback),
+
+  getGifPresets: () => ipcRenderer.invoke('gif:get-presets'),
+  chooseVideoFile: () => ipcRenderer.invoke('dialog:choose-video'),
+  convertToGif: (options) => ipcRenderer.invoke('gif:convert', options),
+  cancelGifConversion: (id) => ipcRenderer.invoke('gif:cancel', id),
+  onGifProgress: (callback) => subscribe('gif:progress', callback),
+  onGifDone: (callback) => subscribe('gif:done', callback),
 });

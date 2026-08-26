@@ -75,3 +75,21 @@ export function XIcon({ className }) {
     </svg>
   );
 }
+
+export function GifIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="3" y="5" width="18" height="14" rx="2.5" strokeLinejoin="round" />
+      <path strokeLinecap="round" d="M7.2 10.3v3.4M7.2 10.3h1.4a1 1 0 0 1 0 2H7.2M11.6 13.7v-3.4h1.9M11.6 12h1.4M15.7 10.3v3.4M15.7 10.3h1.9" />
+    </svg>
+  );
+}
+
+export function UploadIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15.5V4M12 4 8 8M12 4l4 4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15v2.5A2.5 2.5 0 0 0 7 20h10a2.5 2.5 0 0 0 2.5-2.5V15" />
+    </svg>
+  );
+}
