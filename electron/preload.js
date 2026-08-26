@@ -29,4 +29,10 @@ contextBridge.exposeInMainWorld('api', {
   cancelGifConversion: (id) => ipcRenderer.invoke('gif:cancel', id),
   onGifProgress: (callback) => subscribe('gif:progress', callback),
   onGifDone: (callback) => subscribe('gif:done', callback),
+
+  getAppVersion: () => ipcRenderer.invoke('app:get-version'),
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  downloadUpdate: () => ipcRenderer.invoke('update:download'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateStatus: (callback) => subscribe('update:status', callback),
 });

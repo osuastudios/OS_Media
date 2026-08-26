@@ -6,6 +6,7 @@ const { ensureBinaries, checkAndUpdateYtDlp, getInstalledYtDlpVersion, getFfmpeg
 const { startDownload } = require('./ytdlp');
 const { readSettings, writeSettings } = require('./settings');
 const { GIF_PRESETS, convertToGif } = require('./gif');
+const { setupUpdater, checkForUpdates, downloadUpdate, quitAndInstall } = require('./updater');
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -43,6 +44,10 @@ function sendStatus(status) {
 
 app.whenReady().then(async () => {
   createWindow();
+
+  setupUpdater((status) => {
+    mainWindow?.webContents.send('update:status', status);
+  });
 
   try {
     const info = await ensureBinaries(sendStatus);
@@ -209,4 +214,21 @@ ipcMain.handle('gif:cancel', async (_event, id) => {
     return true;
   }
   return false;
+});
+
+ipcMain.handle('app:get-version', async () => app.getVersion());
+
+ipcMain.handle('update:check', async () => checkForUpdates());
+
+ipcMain.handle('update:download', async () => {
+  try {
+    await downloadUpdate();
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('update:install', async () => {
+  quitAndInstall();
 });

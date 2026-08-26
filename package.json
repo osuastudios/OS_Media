@@ -1,7 +1,7 @@
 {
   "name": "os-media",
   "productName": "OS Media",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Descargador interno de vídeo/audio de YouTube y Twitch",
   "author": "OSUA Studio",
@@ -13,6 +13,7 @@
     "dist": "npm run build && electron-builder"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -33,7 +34,11 @@
     "directories": {
       "output": "release"
     },
-    "files": ["dist/**/*", "electron/**/*", "package.json"],
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
     "icon": "build/icon.png",
     "win": {
       "target": "nsis",
@@ -49,6 +54,11 @@
       "target": "dmg",
       "icon": "build/icon.png",
       "category": "public.app-category.utilities"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "osuastudios",
+      "repo": "OS_Media"
     }
   }
 }

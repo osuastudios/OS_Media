@@ -26,6 +26,9 @@ export default function App() {
   const [binariesMessage, setBinariesMessage] = useState('Comprobando yt-dlp, ffmpeg y deno...');
   const [updating, setUpdating] = useState(false);
 
+  const [appVersion, setAppVersion] = useState(null);
+  const [updateStatus, setUpdateStatus] = useState({ state: 'idle' });
+
   useEffect(() => {
     window.api.getSettings().then((settings) => {
       setUseCookies(settings.useCookies);
@@ -33,6 +36,17 @@ export default function App() {
       setSleepInterval(settings.sleepInterval);
       setFilenameTemplate(settings.filenameTemplate);
     });
+    window.api.getAppVersion().then(setAppVersion);
+  }, []);
+
+  useEffect(() => {
+    const unsub = window.api.onUpdateStatus((status) => {
+      setUpdateStatus(status);
+      if (status.state === 'available') {
+        window.api.downloadUpdate();
+      }
+    });
+    return unsub;
   }, []);
 
   useEffect(() => {
@@ -94,6 +108,18 @@ export default function App() {
     window.api.setSettings({ filenameTemplate: value });
   }, []);
 
+  const handleCheckForUpdates = useCallback(async () => {
+    setUpdateStatus({ state: 'checking' });
+    const result = await window.api.checkForUpdates();
+    if (!result.ok) {
+      setUpdateStatus({ state: 'error', message: result.error });
+    }
+  }, []);
+
+  const handleInstallUpdate = useCallback(() => {
+    window.api.installUpdate();
+  }, []);
+
   const handleUpdateYtDlp = useCallback(async () => {
     setUpdating(true);
     setBinariesMessage('Actualizando yt-dlp...');
@@ -137,18 +163,49 @@ export default function App() {
         {activeTab === 'gif' && <GifConverter />}
       </main>
 
-      <footer className="flex items-center justify-between border-t border-white/5 px-6 py-3 text-xs text-neutral-500">
-        <span>
-          yt-dlp: {ytDlpVersion || '—'} · ffmpeg: {ffmpegReady ? 'listo' : '—'} · deno:{' '}
-          {denoReady ? 'listo' : '—'} · {binariesMessage}
-        </span>
-        <button
-          onClick={handleUpdateYtDlp}
-          disabled={updating}
-          className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
-        >
-          Actualizar yt-dlp ahora
-        </button>
+      <footer className="space-y-2 border-t border-white/5 px-6 py-3 text-xs text-neutral-500">
+        <div className="flex items-center justify-between">
+          <span>
+            yt-dlp: {ytDlpVersion || '—'} · ffmpeg: {ffmpegReady ? 'listo' : '—'} · deno:{' '}
+            {denoReady ? 'listo' : '—'} · {binariesMessage}
+          </span>
+          <button
+            onClick={handleUpdateYtDlp}
+            disabled={updating}
+            className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
+          >
+            Actualizar yt-dlp ahora
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span>
+            OS Media {appVersion ? `v${appVersion}` : ''}
+            {updateStatus.state === 'checking' && ' · Buscando actualizaciones...'}
+            {updateStatus.state === 'not-available' && ' · Ya tienes la última versión'}
+            {updateStatus.state === 'available' && ` · Hay una versión nueva (v${updateStatus.version})`}
+            {updateStatus.state === 'downloading' && ` · Descargando actualización... ${updateStatus.percent || 0}%`}
+            {updateStatus.state === 'downloaded' && ` · Actualización v${updateStatus.version} lista para instalar`}
+            {updateStatus.state === 'error' && ` · ${updateStatus.message}`}
+          </span>
+
+          {updateStatus.state === 'downloaded' ? (
+            <button
+              onClick={handleInstallUpdate}
+              className="rounded-lg bg-gradient-to-r from-logo-pink via-brand-500 to-accent-400 px-3 py-1.5 font-semibold text-white hover:opacity-90"
+            >
+              Reiniciar y actualizar
+            </button>
+          ) : (
+            <button
+              onClick={handleCheckForUpdates}
+              disabled={updateStatus.state === 'checking' || updateStatus.state === 'downloading'}
+              className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
+            >
+              Buscar actualizaciones
+            </button>
+          )}
+        </div>
       </footer>
 
       <SettingsModal
