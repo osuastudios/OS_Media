@@ -11,6 +11,10 @@ Bienvenido a OsuaStudio Media Tool, desarrollada por OSUA para sus pequeñas cri
 
 La primera vez que abras la app tardará un poco más: está descargando en silencio las herramientas que necesita por dentro (yt-dlp, ffmpeg, deno). Solo pasa una vez.
 
+## Actualizar la app
+
+Ya no hace falta volver a GitHub cada vez que sale una versión nueva: en la barra de estado inferior pulsa **"Buscar actualizaciones"**. Si hay una nueva, se descarga sola y te aparece un botón **"Reiniciar y actualizar"** — al pulsarlo, la app se cierra, se actualiza y se vuelve a abrir.
+
 ## Descargar algo
 
 1. Pega la URL del vídeo de YouTube o del clip/VOD de Twitch.
