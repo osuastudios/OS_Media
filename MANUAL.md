@@ -23,6 +23,16 @@ La primera vez que abras la app tardará un poco más: está descargando en sile
 - **Vídeo (MP4):** mejor disponible / 1080p / 720p / 480p.
 - **Solo audio (MP3):** máxima calidad siempre, con la miniatura incluida como portada.
 
+## Convertir un vídeo a GIF
+
+En la pestaña **"Vídeo a GIF"**:
+
+1. Arrastra un vídeo a la zona marcada, o haz clic para elegirlo desde tu ordenador (no hace falta que lo hayas descargado con la app, vale cualquier vídeo tuyo).
+2. Elige el preset: **Discord normal (~8MB)**, **Discord Nitro (~50MB)** o **Máxima calidad**.
+3. Pulsa **Convertir a GIF**. El resultado se guarda en la misma carpeta que el vídeo original.
+
+El tamaño final depende de la duración y el movimiento del vídeo — en clips largos o con mucha acción puede superar el objetivo del preset.
+
 ## Ajustes (el engranaje de arriba)
 
 - **Cookies del navegador:** actívalo si YouTube bloquea una descarga. Usa tu sesión de **Firefox** (funciona mucho mejor que Chrome/Edge, que fallan si el navegador está abierto o por cómo cifran las cookies en Windows).
