@@ -40,6 +40,7 @@
       "package.json"
     ],
     "icon": "build/icon.png",
+    "artifactName": "OS-Media-Setup-${version}.${ext}",
     "win": {
       "target": "nsis",
       "icon": "build/icon.png"
