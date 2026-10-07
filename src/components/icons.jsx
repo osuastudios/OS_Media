@@ -93,3 +93,47 @@ export function UploadIcon({ className }) {
     </svg>
   );
 }
+
+export function ScissorsIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="6.5" cy="6.5" r="2.5" />
+      <circle cx="6.5" cy="17.5" r="2.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.6 8 20 18.5M8.6 16 20 5.5" />
+    </svg>
+  );
+}
+
+export function PlayIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+      <path d="M8 5.6v12.8a1 1 0 0 0 1.5.86l10.4-6.4a1 1 0 0 0 0-1.72L9.5 4.74A1 1 0 0 0 8 5.6Z" />
+    </svg>
+  );
+}
+
+export function PauseIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+      <rect x="6.5" y="5" width="4" height="14" rx="1" />
+      <rect x="13.5" y="5" width="4" height="14" rx="1" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.9 12a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.9-12" />
+    </svg>
+  );
+}
+
+export function UndoIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 14 4.5 9.5 9 5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 9.5h10a5 5 0 0 1 0 10H11" />
+    </svg>
+  );
+}

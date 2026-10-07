@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 function subscribe(channel, callback) {
   const handler = (_event, payload) => callback(payload);
@@ -11,6 +11,10 @@ contextBridge.exposeInMainWorld('api', {
   updateYtDlpNow: () => ipcRenderer.invoke('binaries:update-ytdlp'),
   onBinariesStatus: (callback) => subscribe('binaries:status', callback),
   onBinariesReady: (callback) => subscribe('binaries:ready', callback),
+
+  // Desde Electron 32, File.path ya no existe: la ruta de un archivo arrastrado
+  // solo se puede obtener así.
+  getPathForFile: (file) => webUtils.getPathForFile(file),
 
   chooseFolder: () => ipcRenderer.invoke('dialog:choose-folder'),
   openFolder: (folderPath) => ipcRenderer.invoke('shell:open-folder', folderPath),
@@ -29,6 +33,17 @@ contextBridge.exposeInMainWorld('api', {
   cancelGifConversion: (id) => ipcRenderer.invoke('gif:cancel', id),
   onGifProgress: (callback) => subscribe('gif:progress', callback),
   onGifDone: (callback) => subscribe('gif:done', callback),
+
+  openVideoInEditor: (inputPath) => ipcRenderer.invoke('editor:open', inputPath),
+  getEditorThumbnails: (options) => ipcRenderer.invoke('editor:thumbnails', options),
+  makeEditorPreview: (options) => ipcRenderer.invoke('editor:make-preview', options),
+  chooseEditorOutput: (inputPath) => ipcRenderer.invoke('editor:choose-output', inputPath),
+  exportEditedVideo: (options) => ipcRenderer.invoke('editor:export', options),
+  cancelEditorJob: (id) => ipcRenderer.invoke('editor:cancel', id),
+  onEditorPreviewProgress: (callback) => subscribe('editor:preview-progress', callback),
+  onEditorPreviewDone: (callback) => subscribe('editor:preview-done', callback),
+  onEditorExportProgress: (callback) => subscribe('editor:export-progress', callback),
+  onEditorExportDone: (callback) => subscribe('editor:export-done', callback),
 
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),
   checkForUpdates: () => ipcRenderer.invoke('update:check'),

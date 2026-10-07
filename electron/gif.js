@@ -122,4 +122,4 @@ function convertToGif({ inputPath, presetKey, onProgress }) {
   };
 }
 
-module.exports = { GIF_PRESETS, convertToGif };
+module.exports = { GIF_PRESETS, convertToGif, runFfmpeg };

@@ -54,8 +54,9 @@ export default function GifConverter() {
     dragCounter.current = 0;
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file?.path) {
-      setInputPath(file.path);
+    const filePath = file ? window.api.getPathForFile(file) : null;
+    if (filePath) {
+      setInputPath(filePath);
       setConversion(null);
     }
   }, []);

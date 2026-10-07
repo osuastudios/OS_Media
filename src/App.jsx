@@ -4,11 +4,13 @@ import Header from './components/Header';
 import SettingsModal from './components/SettingsModal';
 import DownloadTab from './components/DownloadTab';
 import GifConverter from './components/GifConverter';
-import { VideoIcon, GifIcon } from './components/icons';
+import VideoEditor from './components/VideoEditor';
+import { VideoIcon, GifIcon, ScissorsIcon } from './components/icons';
 
 const TABS = [
   { key: 'download', label: 'Descargar', icon: VideoIcon },
   { key: 'gif', label: 'Vídeo a GIF', icon: GifIcon },
+  { key: 'editor', label: 'Editar vídeo', icon: ScissorsIcon },
 ];
 
 export default function App() {
@@ -161,6 +163,10 @@ export default function App() {
       <main className="flex-1 overflow-y-auto px-6 py-6">
         {activeTab === 'download' && <DownloadTab ytDlpVersion={ytDlpVersion} />}
         {activeTab === 'gif' && <GifConverter />}
+        {/* Siempre montado (solo oculto) para no perder la edición al cambiar de pestaña. */}
+        <div className={activeTab === 'editor' ? '' : 'hidden'}>
+          <VideoEditor active={activeTab === 'editor'} />
+        </div>
       </main>
 
       <footer className="space-y-2 border-t border-white/5 px-6 py-3 text-xs text-neutral-500">

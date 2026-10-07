@@ -37,6 +37,22 @@ En la pestaña **"Vídeo a GIF"**:
 
 El tamaño final depende de la duración y el movimiento del vídeo — en clips largos o con mucha acción puede superar el objetivo del preset.
 
+## Editar un vídeo (recortar y quitar partes)
+
+En la pestaña **"Editar vídeo"**:
+
+1. Arrastra un vídeo o haz clic para elegirlo. Debajo del reproductor aparece la **línea de tiempo** con miniaturas.
+2. Haz clic o arrastra sobre la línea de tiempo para moverte por el vídeo (la línea azul es la posición actual).
+3. **Recortar el principio o el final:** arrastra los bordes laterales del tramo.
+4. **Quitar una parte del medio:** colócate donde empieza, pulsa **Cortar aquí**; colócate donde acaba y vuelve a pulsar **Cortar aquí**. Haz clic en el trozo del medio y pulsa **Eliminar tramo**. Las partes eliminadas se ven oscuras y rayadas, y la reproducción se las salta.
+5. Si te equivocas: **Deshacer** (Ctrl+Z) o **Restablecer** para volver al vídeo completo.
+6. Opcional: marca **Quitar el sonido**.
+7. Pulsa **Exportar vídeo** y elige dónde guardarlo. Se guarda como MP4 y el original no se toca.
+
+Atajos de teclado: **Espacio** (reproducir/pausar), **S** (cortar aquí), **Supr** (eliminar tramo), **Ctrl+Z** (deshacer), **flechas** (±1 segundo, con Mayús ±5).
+
+Si un vídeo usa un formato que el reproductor no puede mostrar (por ejemplo algunos vídeos de móvil), la app prepara sola una vista previa; el vídeo exportado mantiene la calidad del original.
+
 ## Ajustes (el engranaje de arriba)
 
 - **Cookies del navegador:** actívalo si YouTube bloquea una descarga. Usa tu sesión de **Firefox** (funciona mucho mejor que Chrome/Edge, que fallan si el navegador está abierto o por cómo cifran las cookies en Windows).

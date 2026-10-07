@@ -1,11 +1,21 @@
 // OS Media — Made by OSUA Studio
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, protocol } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { ensureBinaries, checkAndUpdateYtDlp, getInstalledYtDlpVersion, getFfmpegPath, getDenoPath } = require('./binaries');
 const { startDownload } = require('./ytdlp');
 const { readSettings, writeSettings } = require('./settings');
 const { GIF_PRESETS, convertToGif } = require('./gif');
+const {
+  VIDEO_SCHEME,
+  registerVideo,
+  handleVideoRequest,
+  probeVideo,
+  getThumbnails,
+  createPreview,
+  cleanupPreviews,
+  exportVideo,
+} = require('./editor');
 const { setupUpdater, checkForUpdates, downloadUpdate, quitAndInstall } = require('./updater');
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -13,6 +23,13 @@ const isDev = process.env.NODE_ENV === 'development';
 let mainWindow;
 const activeDownloads = new Map();
 const activeGifConversions = new Map();
+const activeEditorJobs = new Map();
+
+// Debe registrarse antes de que la app esté lista: permite que el <video> del
+// editor lea archivos locales con saltos (stream) desde cualquier origen.
+protocol.registerSchemesAsPrivileged([
+  { scheme: VIDEO_SCHEME, privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true } },
+]);
 
 const iconPath = path.join(__dirname, '..', 'build', 'icon.png');
 
@@ -43,6 +60,7 @@ function sendStatus(status) {
 }
 
 app.whenReady().then(async () => {
+  protocol.handle(VIDEO_SCHEME, handleVideoRequest);
   createWindow();
 
   setupUpdater((status) => {
@@ -72,6 +90,8 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
+app.on('will-quit', cleanupPreviews);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -211,6 +231,92 @@ ipcMain.handle('gif:cancel', async (_event, id) => {
   if (cancel) {
     cancel();
     activeGifConversions.delete(id);
+    return true;
+  }
+  return false;
+});
+
+function trackEditorJob(channel, { promise, cancel }, buildDonePayload, errorMessage) {
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  activeEditorJobs.set(id, cancel);
+  promise
+    .then((result) => {
+      mainWindow?.webContents.send(channel, { id, ok: true, ...buildDonePayload(result) });
+    })
+    .catch((err) => {
+      if (err.cancelled) return;
+      mainWindow?.webContents.send(channel, { id, ok: false, message: errorMessage, details: err.message });
+    })
+    .finally(() => {
+      activeEditorJobs.delete(id);
+    });
+  return id;
+}
+
+ipcMain.handle('editor:open', async (_event, inputPath) => {
+  try {
+    const info = await probeVideo(inputPath);
+    if (!info.hasVideo) return { ok: false, error: 'El archivo no contiene vídeo.' };
+    return { ok: true, ...info, url: registerVideo(inputPath) };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo abrir el archivo. Comprueba que es un vídeo válido.', details: err.message };
+  }
+});
+
+ipcMain.handle('editor:thumbnails', async (_event, { inputPath, duration, count }) =>
+  getThumbnails(inputPath, { duration, count })
+);
+
+ipcMain.handle('editor:make-preview', async (_event, { inputPath, duration }) => {
+  let id;
+  const job = createPreview({
+    inputPath,
+    duration,
+    onProgress: (percent) => mainWindow?.webContents.send('editor:preview-progress', { id, percent }),
+  });
+  id = trackEditorJob(
+    'editor:preview-done',
+    job,
+    ({ outputPath }) => ({ url: registerVideo(outputPath) }),
+    'No se pudo preparar la vista previa de este vídeo.'
+  );
+  return { id };
+});
+
+ipcMain.handle('editor:choose-output', async (_event, inputPath) => {
+  const dir = path.dirname(inputPath);
+  const base = path.basename(inputPath, path.extname(inputPath));
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: path.join(dir, `${base}_editado.mp4`),
+    filters: [{ name: 'Vídeo MP4', extensions: ['mp4'] }],
+  });
+  if (result.canceled || !result.filePath) return null;
+  if (path.resolve(result.filePath) === path.resolve(inputPath)) {
+    return { error: 'Elige un nombre distinto al del vídeo original.' };
+  }
+  return { outputPath: result.filePath };
+});
+
+ipcMain.handle('editor:export', async (_event, options) => {
+  let id;
+  const job = exportVideo({
+    ...options,
+    onProgress: (percent) => mainWindow?.webContents.send('editor:export-progress', { id, percent }),
+  });
+  id = trackEditorJob(
+    'editor:export-done',
+    job,
+    ({ outputPath, sizeBytes }) => ({ outputPath, sizeBytes }),
+    'No se pudo exportar el vídeo.'
+  );
+  return { id };
+});
+
+ipcMain.handle('editor:cancel', async (_event, id) => {
+  const cancel = activeEditorJobs.get(id);
+  if (cancel) {
+    cancel();
+    activeEditorJobs.delete(id);
     return true;
   }
   return false;
