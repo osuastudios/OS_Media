@@ -12,6 +12,8 @@ const DEFAULTS = {
   cookiesBrowser: 'firefox',
   sleepInterval: 3,
   filenameTemplate: '%(title)s.%(ext)s',
+  freesoundKey: null,
+  soundFavorites: [],
 };
 
 function readSettings() {

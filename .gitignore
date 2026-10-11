@@ -4,3 +4,6 @@ release/
 *.log
 .DS_Store
 Thumbs.db
+
+# Clave de la API de Freesound (no subir: el repo es publico)
+electron/freesound.local.json

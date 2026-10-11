@@ -1,5 +1,5 @@
 // OS Media — Made by OSUA Studio
-const { app, BrowserWindow, ipcMain, dialog, shell, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, protocol, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { ensureBinaries, checkAndUpdateYtDlp, getInstalledYtDlpVersion, getFfmpegPath, getDenoPath } = require('./binaries');
@@ -16,6 +16,15 @@ const {
   cleanupPreviews,
   exportVideo,
 } = require('./editor');
+const {
+  SOUND_CATEGORIES,
+  getApiKey,
+  getSoundsDir,
+  searchSounds,
+  downloadSound,
+  findDownloaded,
+  isInsideSoundsDir,
+} = require('./sounds');
 const { setupUpdater, checkForUpdates, downloadUpdate, quitAndInstall } = require('./updater');
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -320,6 +329,67 @@ ipcMain.handle('editor:cancel', async (_event, id) => {
     return true;
   }
   return false;
+});
+
+ipcMain.handle('sounds:get-info', async () => ({
+  categories: SOUND_CATEGORIES.map(({ key, label }) => ({ key, label })),
+  hasKey: Boolean(getApiKey()),
+}));
+
+ipcMain.handle('sounds:set-key', async (_event, key) => {
+  writeSettings({ freesoundKey: key?.trim() || null });
+  try {
+    await searchSounds({ query: 'test' });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, code: err.code, error: err.message };
+  }
+});
+
+ipcMain.handle('sounds:search', async (_event, options) => {
+  try {
+    return { ok: true, ...(await searchSounds(options)) };
+  } catch (err) {
+    return {
+      ok: false,
+      code: err.code,
+      error: err.code ? err.message : 'No se pudo conectar con la biblioteca de sonidos. Comprueba tu conexión.',
+      details: err.message,
+    };
+  }
+});
+
+ipcMain.handle('sounds:download', async (_event, { sound, format }) => {
+  try {
+    const { filePath } = await downloadSound({ sound, format });
+    return { ok: true, filePath, downloaded: findDownloaded(sound.id)[sound.id] || {} };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo descargar el sonido.', details: err.message };
+  }
+});
+
+ipcMain.handle('sounds:downloaded', async () => findDownloaded());
+
+ipcMain.handle('shell:open-freesound', async () => {
+  shell.openExternal('https://freesound.org/apiv2/apply/');
+});
+
+ipcMain.handle('sounds:open-folder', async () => {
+  const dir = getSoundsDir();
+  fs.mkdirSync(dir, { recursive: true });
+  shell.openPath(dir);
+});
+
+ipcMain.handle('sounds:show-file', async (_event, filePath) => {
+  if (isInsideSoundsDir(filePath) && fs.existsSync(filePath)) shell.showItemInFolder(filePath);
+});
+
+// Arrastrar un sonido descargado desde la app directamente a Premiere,
+// CapCut, DaVinci, etc. Solo se permiten archivos de la carpeta de sonidos.
+const dragIcon = nativeImage.createFromPath(path.join(__dirname, 'drag-icon.png'));
+ipcMain.on('sounds:start-drag', (event, filePath) => {
+  if (!isInsideSoundsDir(filePath) || !fs.existsSync(filePath)) return;
+  event.sender.startDrag({ file: filePath, icon: dragIcon });
 });
 
 ipcMain.handle('app:get-version', async () => app.getVersion());

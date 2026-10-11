@@ -53,6 +53,19 @@ Atajos de teclado: **Espacio** (reproducir/pausar), **S** (cortar aquí), **Supr
 
 Si un vídeo usa un formato que el reproductor no puede mostrar (por ejemplo algunos vídeos de móvil), la app prepara sola una vista previa; el vídeo exportado mantiene la calidad del original.
 
+## Biblioteca de sonidos (efectos sin copyright)
+
+En la pestaña **"Sonidos"** tienes cientos de miles de efectos de sonido de Freesound. La app **solo muestra sonidos CC0 (dominio público)**: puedes usarlos en vídeos monetizados, sin pedir permiso y sin dar crédito.
+
+1. Elige una categoría (Coches, Drift, Disparos, Cámara, Gritos, Whoosh...) o escribe lo que buscas. Puedes buscar en español (*disparo*, *frenazo*, *gritos*), aunque en inglés suele haber más resultados.
+2. Filtra por **duración** y ordena por **más descargados**, **mejor valorados**, etc.
+3. Pulsa ▶ para escucharlo. Haz clic en la forma de onda para saltar a esa parte.
+4. Descárgalo en **MP3** o **WAV**. Se guarda en la carpeta **Sonidos**, dentro de tu carpeta de descargas de OS Media.
+5. Una vez descargado (marca verde ✓), **arrastra la fila directamente a Premiere, CapCut, DaVinci...**
+6. Pulsa la ⭐ para guardarlo en **Favoritos**.
+
+La primera vez puede pedirte una clave gratuita de Freesound; la propia pestaña explica cómo conseguirla en un minuto.
+
 ## Ajustes (el engranaje de arriba)
 
 - **Cookies del navegador:** actívalo si YouTube bloquea una descarga. Usa tu sesión de **Firefox** (funciona mucho mejor que Chrome/Edge, que fallan si el navegador está abierto o por cómo cifran las cookies en Windows).

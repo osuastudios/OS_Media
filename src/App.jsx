@@ -5,12 +5,14 @@ import SettingsModal from './components/SettingsModal';
 import DownloadTab from './components/DownloadTab';
 import GifConverter from './components/GifConverter';
 import VideoEditor from './components/VideoEditor';
-import { VideoIcon, GifIcon, ScissorsIcon } from './components/icons';
+import SoundLibrary from './components/SoundLibrary';
+import { VideoIcon, GifIcon, ScissorsIcon, SoundIcon } from './components/icons';
 
 const TABS = [
   { key: 'download', label: 'Descargar', icon: VideoIcon },
   { key: 'gif', label: 'Vídeo a GIF', icon: GifIcon },
   { key: 'editor', label: 'Editar vídeo', icon: ScissorsIcon },
+  { key: 'sounds', label: 'Sonidos', icon: SoundIcon },
 ];
 
 export default function App() {
@@ -166,6 +168,9 @@ export default function App() {
         {/* Siempre montado (solo oculto) para no perder la edición al cambiar de pestaña. */}
         <div className={activeTab === 'editor' ? '' : 'hidden'}>
           <VideoEditor active={activeTab === 'editor'} />
+        </div>
+        <div className={activeTab === 'sounds' ? '' : 'hidden'}>
+          <SoundLibrary active={activeTab === 'sounds'} />
         </div>
       </main>
 

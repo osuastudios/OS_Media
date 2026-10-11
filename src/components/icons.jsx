@@ -137,3 +137,40 @@ export function UndoIcon({ className }) {
     </svg>
   );
 }
+
+export function SoundIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path strokeLinecap="round" d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" />
+    </svg>
+  );
+}
+
+export function StarIcon({ className, filled }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
+      <path
+        strokeLinejoin="round"
+        d="m12 3.8 2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8L12 3.8Z"
+      />
+    </svg>
+  );
+}
+
+export function DownloadIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v11.5M12 15.5l-4-4M12 15.5l4-4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15v2.5A2.5 2.5 0 0 0 7 20h10a2.5 2.5 0 0 0 2.5-2.5V15" />
+    </svg>
+  );
+}
+
+export function SearchIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="11" cy="11" r="6.5" />
+      <path strokeLinecap="round" d="m16 16 4 4" />
+    </svg>
+  );
+}

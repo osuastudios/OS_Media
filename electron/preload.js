@@ -45,6 +45,16 @@ contextBridge.exposeInMainWorld('api', {
   onEditorExportProgress: (callback) => subscribe('editor:export-progress', callback),
   onEditorExportDone: (callback) => subscribe('editor:export-done', callback),
 
+  getSoundsInfo: () => ipcRenderer.invoke('sounds:get-info'),
+  setFreesoundKey: (key) => ipcRenderer.invoke('sounds:set-key', key),
+  searchSounds: (options) => ipcRenderer.invoke('sounds:search', options),
+  downloadSound: (options) => ipcRenderer.invoke('sounds:download', options),
+  getDownloadedSounds: () => ipcRenderer.invoke('sounds:downloaded'),
+  openFreesoundSignup: () => ipcRenderer.invoke('shell:open-freesound'),
+  openSoundsFolder: () => ipcRenderer.invoke('sounds:open-folder'),
+  showSoundFile: (filePath) => ipcRenderer.invoke('sounds:show-file', filePath),
+  startSoundDrag: (filePath) => ipcRenderer.send('sounds:start-drag', filePath),
+
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),
   checkForUpdates: () => ipcRenderer.invoke('update:check'),
   downloadUpdate: () => ipcRenderer.invoke('update:download'),
