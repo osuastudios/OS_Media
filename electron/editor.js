@@ -48,6 +48,9 @@ async function handleVideoRequest(request) {
   const headers = {
     'Content-Type': MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream',
     'Accept-Ranges': 'bytes',
+    // El editor pasa el audio por Web Audio para poder subir el volumen por
+    // encima del 100 %; sin CORS el navegador entregaría silencio.
+    'Access-Control-Allow-Origin': '*',
   };
 
   const range = /bytes=(\d*)-(\d*)/.exec(request.headers.get('range') || '');
@@ -108,13 +111,29 @@ function probeVideo(inputPath) {
   });
 }
 
-function grabFrame(inputPath, seconds, height) {
+// Primero se intenta la búsqueda rápida (-ss antes de -i). Con algunos vídeos
+// no devuelve fotograma, y entonces se reintenta saltando un poco antes y
+// decodificando hasta el punto exacto.
+async function grabFrame(inputPath, seconds, height) {
+  const fast = await grabFrameWithArgs(inputPath, ['-ss', seconds.toFixed(3)], [], height);
+  if (fast) return fast;
+  const preroll = Math.min(seconds, 3);
+  return grabFrameWithArgs(
+    inputPath,
+    ['-ss', (seconds - preroll).toFixed(3)],
+    ['-ss', preroll.toFixed(3)],
+    height
+  );
+}
+
+function grabFrameWithArgs(inputPath, inputSeek, outputSeek, height) {
   return new Promise((resolve) => {
     const proc = spawn(
       getFfmpegPath(),
       [
-        '-ss', seconds.toFixed(3),
+        ...inputSeek,
         '-i', inputPath,
+        ...outputSeek,
         '-frames:v', '1',
         '-vf', `scale=-2:${height}`,
         '-f', 'image2pipe',
@@ -201,11 +220,13 @@ function cleanupPreviews() {
 
 // Cada tramo conservado entra como una entrada separada con -ss/-t (búsqueda
 // rápida y precisa al recodificar) y luego se unen con el filtro concat.
-function exportVideo({ inputPath, outputPath, segments, hasAudio, removeAudio, onProgress }) {
+// volume: 1 = original, 0 = sin sonido (se exporta sin pista de audio), 2 = doble.
+function exportVideo({ inputPath, outputPath, segments, hasAudio, volume = 1, onProgress }) {
   let currentProcess = null;
   let cancelled = false;
 
-  const includeAudio = hasAudio && !removeAudio;
+  const includeAudio = hasAudio && volume > 0;
+  const volumeFilter = includeAudio && volume !== 1 ? `;[ca]volume=${volume.toFixed(2)}[outa]` : '';
   const inputArgs = [];
   const concatInputs = [];
   segments.forEach((segment, i) => {
@@ -215,8 +236,9 @@ function exportVideo({ inputPath, outputPath, segments, hasAudio, removeAudio, o
 
   const filter =
     `${concatInputs.join('')}concat=n=${segments.length}:v=1:a=${includeAudio ? 1 : 0}` +
-    (includeAudio ? '[cv][outa];' : '[cv];') +
-    '[cv]scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1[outv]';
+    (includeAudio ? (volumeFilter ? '[cv][ca];' : '[cv][outa];') : '[cv];') +
+    '[cv]scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1[outv]' +
+    volumeFilter;
 
   const totalDuration = segments.reduce((sum, s) => sum + (s.end - s.start), 0);
 

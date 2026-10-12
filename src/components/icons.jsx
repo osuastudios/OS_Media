@@ -174,3 +174,16 @@ export function SearchIcon({ className }) {
     </svg>
   );
 }
+
+export function VolumeIcon({ className, muted }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path strokeLinejoin="round" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4v-5Z" />
+      {muted ? (
+        <path strokeLinecap="round" d="m16 9.5 5 5M21 9.5l-5 5" />
+      ) : (
+        <path strokeLinecap="round" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
+      )}
+    </svg>
+  );
+}

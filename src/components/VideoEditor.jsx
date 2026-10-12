@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
 import {
   FolderIcon,
   UploadIcon,
@@ -10,12 +10,32 @@ import {
   PauseIcon,
   TrashIcon,
   UndoIcon,
+  VolumeIcon,
 } from './icons';
 
 // Duración mínima de un tramo: evita tramos de 0 segundos al arrastrar bordes o cortar.
 const MIN_SEGMENT = 0.1;
-const THUMBNAIL_COUNT = 12;
-const RULER_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600];
+const THUMBNAIL_COUNT = 24;
+const RULER_STEPS = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600];
+// Ancho aproximado de cada miniatura de la tira, en píxeles.
+const TILE_WIDTH = 96;
+// Zoom máximo: con vídeos cortos no tiene sentido ampliar más de lo que permite
+// ver ~2 segundos a lo ancho.
+const MAX_ZOOM = 200;
+const MIN_LABEL_SPACING = 70;
+
+// Sustituye las miniaturas que no se pudieron generar por la más cercana,
+// para que la tira no tenga huecos.
+function fillThumbnailGaps(thumbs) {
+  return thumbs.map((src, i) => {
+    if (src) return src;
+    for (let d = 1; d < thumbs.length; d++) {
+      if (thumbs[i - d]) return thumbs[i - d];
+      if (thumbs[i + d]) return thumbs[i + d];
+    }
+    return null;
+  });
+}
 
 function formatTime(seconds, withTenths = true) {
   const safe = Math.max(0, seconds || 0);
@@ -54,8 +74,13 @@ export default function VideoEditor({ active }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [playing, setPlaying] = useState(false);
 
-  const [removeAudio, setRemoveAudio] = useState(false);
+  // 1 = volumen original, 0 = sin sonido, 2 = doble. Afecta a la vista previa y a la exportación.
+  const [volume, setVolume] = useState(1);
   const [exportJob, setExportJob] = useState(null);
+
+  const [zoom, setZoom] = useState(1);
+  const [viewWidth, setViewWidth] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   const videoRef = useRef(null);
   const timelineRef = useRef(null);
@@ -63,11 +88,19 @@ export default function VideoEditor({ active }) {
   const pointerRef = useRef(null);
   const dragCounter = useRef(0);
   const openPathRef = useRef(null);
+  const scrollRef = useRef(null);
+  const zoomAnchorRef = useRef(null);
+  const wheelHandlerRef = useRef(null);
+  const audioGraphRef = useRef(null);
+  const lastVolumeRef = useRef(1);
   segmentsRef.current = segments;
 
   const duration = video?.duration || 0;
   const keptDuration = segments.reduce((sum, s) => sum + (s.end - s.start), 0);
   const isExporting = exportJob && !exportJob.done;
+  const playerSrc = video ? (preview ? preview.url : video.url) : null;
+  const maxZoom = Math.min(MAX_ZOOM, Math.max(1, duration / 2));
+  const trackWidth = viewWidth * zoom;
 
   // --- Carga del vídeo -------------------------------------------------------
 
@@ -91,6 +124,8 @@ export default function VideoEditor({ active }) {
     setThumbnails([]);
     setPreview(null);
     setExportJob(null);
+    setVolume(1);
+    setZoom(1);
 
     const thumbs = await window.api.getEditorThumbnails({
       inputPath,
@@ -201,9 +236,35 @@ export default function VideoEditor({ active }) {
     return () => cancelAnimationFrame(frame);
   }, [playing]);
 
+  // <video>.volume no pasa del 100 %, así que el audio pasa por un nodo de
+  // ganancia de Web Audio. Cada elemento <video> solo se puede conectar una vez.
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    let graph = audioGraphRef.current;
+    if (graph?.element !== el) {
+      const ctx = graph?.ctx || new AudioContext();
+      const gain = ctx.createGain();
+      ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
+      graph = { ctx, element: el, gain };
+      audioGraphRef.current = graph;
+    }
+    graph.gain.gain.value = volume;
+  }, [volume, playerSrc]);
+
+  const toggleMute = useCallback(() => {
+    if (volume > 0) {
+      lastVolumeRef.current = volume;
+      setVolume(0);
+    } else {
+      setVolume(lastVolumeRef.current || 1);
+    }
+  }, [volume]);
+
   const togglePlay = useCallback(() => {
     const el = videoRef.current;
     if (!el || segments.length === 0) return;
+    audioGraphRef.current?.ctx.resume();
     if (!el.paused) {
       el.pause();
       return;
@@ -343,9 +404,115 @@ export default function VideoEditor({ active }) {
   const lastEnd = segments.length ? segments[segments.length - 1].end : 0;
   if (lastEnd < duration) gaps.push({ start: lastEnd, end: duration });
 
-  const rulerStep = RULER_STEPS.find((step) => duration / step <= 10) || 3600;
+  // --- Zoom de la línea de tiempo -------------------------------------------
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    const observer = new ResizeObserver(() => setViewWidth(el.clientWidth));
+    observer.observe(el);
+    setViewWidth(el.clientWidth);
+    return () => observer.disconnect();
+  }, [video]);
+
+  // anchor = { time, offset }: el instante que debe quedarse en la misma
+  // posición de la pantalla (offset en px desde el borde izquierdo) al ampliar.
+  const applyZoom = useCallback(
+    (next, anchor) => {
+      zoomAnchorRef.current = anchor;
+      setZoom(Math.min(Math.max(1, next), maxZoom));
+    },
+    [maxZoom]
+  );
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    const anchor = zoomAnchorRef.current;
+    zoomAnchorRef.current = null;
+    if (!el || !anchor || !duration) return;
+    el.scrollLeft = (anchor.time / duration) * el.clientWidth * zoom - anchor.offset;
+    setScrollLeft(el.scrollLeft);
+  }, [zoom, duration]);
+
+  // Los botones y atajos amplían alrededor del cabezal (o del centro si no se ve).
+  const zoomBy = useCallback(
+    (factor) => {
+      const el = scrollRef.current;
+      if (!el || !duration) return;
+      const playheadX = (currentTime / duration) * el.clientWidth * zoom - el.scrollLeft;
+      const visible = playheadX >= 0 && playheadX <= el.clientWidth;
+      const offset = visible ? playheadX : el.clientWidth / 2;
+      const time = visible ? currentTime : ((el.scrollLeft + offset) / (el.clientWidth * zoom)) * duration;
+      applyZoom(zoom * factor, { time, offset });
+    },
+    [applyZoom, currentTime, duration, zoom]
+  );
+
+  // Ctrl + rueda amplía alrededor del ratón; la rueda sola desplaza la línea de
+  // tiempo cuando está ampliada. Se registra a mano porque React añade los
+  // eventos de rueda como pasivos y no dejaría cancelar el scroll de la página.
+  wheelHandlerRef.current = (e) => {
+    const el = scrollRef.current;
+    if (!el || !duration) return;
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const offset = e.clientX - el.getBoundingClientRect().left;
+      const time = ((el.scrollLeft + offset) / (el.clientWidth * zoom)) * duration;
+      applyZoom(zoom * Math.exp(-e.deltaY * 0.0025), { time, offset });
+    } else if (zoom > 1 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    }
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    const onWheel = (e) => wheelHandlerRef.current?.(e);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [video]);
+
+  // Al reproducir con zoom, la vista sigue al cabezal.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!playing || zoom === 1 || !el || !duration) return;
+    const x = (currentTime / duration) * el.clientWidth * zoom;
+    if (x < el.scrollLeft || x > el.scrollLeft + el.clientWidth - 16) {
+      el.scrollLeft = x - el.clientWidth * 0.1;
+    }
+  }, [currentTime, playing, zoom, duration]);
+
+  // Solo se dibujan las marcas y miniaturas cercanas a la zona visible: con
+  // mucho zoom la línea de tiempo puede medir cientos de miles de píxeles.
+  const visibleFrom = scrollLeft - viewWidth;
+  const visibleTo = scrollLeft + viewWidth * 2;
+
+  const rulerStep = RULER_STEPS.find((step) => (step / duration) * trackWidth >= MIN_LABEL_SPACING) || 3600;
   const rulerMarks = [];
-  for (let t = 0; t <= duration; t += rulerStep) rulerMarks.push(t);
+  if (duration && trackWidth) {
+    for (let i = 0; i * rulerStep <= duration; i++) {
+      const t = i * rulerStep;
+      const x = (t / duration) * trackWidth;
+      if (x >= visibleFrom && x <= visibleTo) rulerMarks.push(t);
+    }
+  }
+
+  const filledThumbnails = fillThumbnailGaps(thumbnails);
+  const tileCount = Math.max(1, Math.round(trackWidth / TILE_WIDTH));
+  const tileWidth = trackWidth / tileCount;
+  const tiles = [];
+  if (filledThumbnails.length && trackWidth) {
+    const first = Math.max(0, Math.floor(visibleFrom / tileWidth));
+    const last = Math.min(tileCount - 1, Math.ceil(visibleTo / tileWidth));
+    for (let i = first; i <= last; i++) {
+      const thumbIndex = Math.min(
+        filledThumbnails.length - 1,
+        Math.floor(((i + 0.5) / tileCount) * filledThumbnails.length)
+      );
+      tiles.push({ i, src: filledThumbnails[thumbIndex] });
+    }
+  }
 
   // --- Atajos de teclado -----------------------------------------------------
 
@@ -366,6 +533,10 @@ export default function VideoEditor({ active }) {
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         handleUndo();
+      } else if (e.key === '+' || e.key === '=') {
+        zoomBy(1.5);
+      } else if (e.key === '-') {
+        zoomBy(1 / 1.5);
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
         const step = e.shiftKey ? 5 : 1;
@@ -374,7 +545,7 @@ export default function VideoEditor({ active }) {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [active, video, togglePlay, handleSplit, handleDelete, handleUndo, seek, currentTime]);
+  }, [active, video, togglePlay, handleSplit, handleDelete, handleUndo, seek, currentTime, zoomBy]);
 
   // --- Exportación -----------------------------------------------------------
 
@@ -393,10 +564,10 @@ export default function VideoEditor({ active }) {
       outputPath: choice.outputPath,
       segments,
       hasAudio: video.hasAudio,
-      removeAudio,
+      volume,
     });
     setExportJob((prev) => (prev ? { ...prev, id: result.id } : prev));
-  }, [video, segments, removeAudio]);
+  }, [video, segments, volume]);
 
   const handleCancelExport = useCallback(() => {
     if (exportJob?.id) {
@@ -440,7 +611,6 @@ export default function VideoEditor({ active }) {
   }
 
   const fileName = video.inputPath.split(/[\\/]/).pop();
-  const playerSrc = preview ? preview.url : video.url;
   const pct = (t) => `${(t / duration) * 100}%`;
 
   return (
@@ -464,6 +634,7 @@ export default function VideoEditor({ active }) {
             <video
               ref={videoRef}
               src={playerSrc}
+              crossOrigin="anonymous"
               className="max-h-[45vh] w-full cursor-pointer object-contain"
               onClick={togglePlay}
               onPlay={() => setPlaying(true)}
@@ -523,13 +694,94 @@ export default function VideoEditor({ active }) {
           <button onClick={handleReset} className={toolButtonClass} title="Volver al vídeo completo">
             Restablecer
           </button>
+
+          <div className="ml-auto flex flex-wrap items-center gap-4">
+            {video.hasAudio && (
+              <div className="flex items-center gap-2" title="Volumen del vídeo. También se aplica al exportar (doble clic: 100 %)">
+                <button
+                  onClick={toggleMute}
+                  className="rounded-md p-1 text-neutral-300 hover:bg-white/5 hover:text-white"
+                  aria-label={volume === 0 ? 'Activar sonido' : 'Silenciar'}
+                >
+                  <VolumeIcon className="h-4 w-4" muted={volume === 0} />
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="200"
+                  step="5"
+                  value={Math.round(volume * 100)}
+                  onChange={(e) => setVolume(Number(e.target.value) / 100)}
+                  onDoubleClick={() => setVolume(1)}
+                  className="w-24 accent-brand-500"
+                  aria-label="Volumen"
+                />
+                <span className={`w-10 font-mono text-xs ${volume > 1 ? 'text-amber-400' : 'text-neutral-400'}`}>
+                  {Math.round(volume * 100)}%
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-1.5" title="Zoom de la línea de tiempo (Ctrl + rueda, o teclas + y −)">
+              <button
+                onClick={() => zoomBy(1 / 1.5)}
+                disabled={zoom <= 1}
+                className={`${toolButtonClass} px-2`}
+                aria-label="Alejar"
+              >
+                −
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.001"
+                value={maxZoom > 1 ? Math.log(zoom) / Math.log(maxZoom) : 0}
+                onChange={(e) => {
+                  const el = scrollRef.current;
+                  const offset = el ? el.clientWidth / 2 : 0;
+                  const time = el ? ((el.scrollLeft + offset) / (el.clientWidth * zoom)) * duration : 0;
+                  applyZoom(Math.pow(maxZoom, Number(e.target.value)), { time, offset });
+                }}
+                disabled={maxZoom <= 1}
+                className="w-24 accent-brand-500"
+                aria-label="Zoom"
+              />
+              <button
+                onClick={() => zoomBy(1.5)}
+                disabled={zoom >= maxZoom}
+                className={`${toolButtonClass} px-2`}
+                aria-label="Ampliar"
+              >
+                +
+              </button>
+              <button
+                onClick={() => applyZoom(1, { time: 0, offset: 0 })}
+                disabled={zoom <= 1}
+                className={toolButtonClass}
+                title="Ver el vídeo completo"
+              >
+                Ajustar
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="select-none space-y-1">
+          <div
+            ref={scrollRef}
+            onScroll={(e) => setScrollLeft(e.currentTarget.scrollLeft)}
+            className="timeline-scroll overflow-x-auto pb-1"
+          >
+          <div className="space-y-1" style={{ width: `${zoom * 100}%` }}>
           <div className="relative h-4 text-[10px] text-neutral-500">
             {rulerMarks.map((t) => (
-              <span key={t} className="absolute -translate-x-1/2 first:translate-x-0 last:-translate-x-full" style={{ left: pct(t) }}>
-                {formatTime(t, false)}
+              <span
+                key={t}
+                className={`absolute whitespace-nowrap ${t === 0 ? '' : t + rulerStep > duration ? '-translate-x-full' : '-translate-x-1/2'}`}
+                style={{ left: pct(t) }}
+              >
+                {formatTime(t, rulerStep < 1)}
               </span>
             ))}
           </div>
@@ -542,13 +794,18 @@ export default function VideoEditor({ active }) {
             onPointerCancel={handleTimelinePointerUp}
             className="relative h-16 cursor-pointer touch-none overflow-hidden rounded-lg bg-neutral-800"
           >
-            <div className="pointer-events-none absolute inset-0 flex">
-              {thumbnails.map((src, i) =>
+            <div className="pointer-events-none absolute inset-0">
+              {tiles.map(({ i, src }) =>
                 src ? (
-                  <img key={i} src={src} alt="" className="h-full min-w-0 flex-1 object-cover" draggable={false} />
-                ) : (
-                  <div key={i} className="h-full flex-1" />
-                )
+                  <img
+                    key={i}
+                    src={src}
+                    alt=""
+                    className="absolute inset-y-0 h-full object-cover"
+                    style={{ left: i * tileWidth, width: tileWidth }}
+                    draggable={false}
+                  />
+                ) : null
               )}
             </div>
             {/* Las partes que no se exportarán se ven oscurecidas y rayadas. */}
@@ -591,10 +848,13 @@ export default function VideoEditor({ active }) {
               <div className="absolute -top-0.5 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 bg-accent-400" />
             </div>
           </div>
+          </div>
+          </div>
 
           <p className="pt-1 text-xs text-neutral-500">
             Arrastra los bordes de un tramo para recortarlo. Usa <b>Cortar aquí</b> para dividirlo y <b>Eliminar tramo</b>{' '}
-            para quitar partes. Atajos: Espacio, S, Supr, Ctrl+Z, flechas (±1 s, con Mayús ±5 s).
+            para quitar partes. Ctrl + rueda del ratón amplía la línea de tiempo. Atajos: Espacio, S, Supr, Ctrl+Z, + y −
+            (zoom), flechas (±1 s, con Mayús ±5 s).
           </p>
         </div>
       </section>
@@ -609,15 +869,9 @@ export default function VideoEditor({ active }) {
             </span>
           </div>
           {video.hasAudio && (
-            <label className="flex items-center gap-2 text-sm text-neutral-400">
-              <input
-                type="checkbox"
-                checked={removeAudio}
-                onChange={(e) => setRemoveAudio(e.target.checked)}
-                className="accent-brand-500"
-              />
-              Quitar el sonido
-            </label>
+            <span className="text-sm text-neutral-400">
+              {volume === 0 ? 'Sin sonido' : `Volumen: ${Math.round(volume * 100)} %`}
+            </span>
           )}
           <button
             onClick={handleExport}

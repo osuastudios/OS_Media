@@ -8,6 +8,7 @@ import {
   DownloadIcon,
   SearchIcon,
   CheckCircleIcon,
+  VolumeIcon,
 } from './icons';
 
 const DURATIONS = [
@@ -25,6 +26,19 @@ const SORTS = [
   { key: 'newest', label: 'Más recientes' },
   { key: 'shortest', label: 'Más cortos' },
 ];
+
+const VOLUME_STORAGE_KEY = 'osmedia.soundsVolume';
+
+// El volumen de escucha se recuerda en este equipo. Si el almacenamiento no
+// está disponible se usa el 80 % por defecto.
+function readStoredVolume() {
+  try {
+    const value = Number(localStorage.getItem(VOLUME_STORAGE_KEY));
+    return localStorage.getItem(VOLUME_STORAGE_KEY) !== null && value >= 0 && value <= 1 ? value : 0.8;
+  } catch {
+    return 0.8;
+  }
+}
 
 function formatDuration(seconds) {
   if (seconds < 10) return `${seconds.toFixed(1)} s`;
@@ -206,6 +220,8 @@ export default function SoundLibrary({ active }) {
 
   const [playingId, setPlayingId] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [volume, setVolume] = useState(readStoredVolume);
+  const lastVolumeRef = useRef(0.8);
   const audioRef = useRef(null);
   const requestRef = useRef(0);
 
@@ -223,6 +239,7 @@ export default function SoundLibrary({ active }) {
       setPlayingId(null);
       setProgress(0);
     });
+    audio.volume = readStoredVolume();
     audioRef.current = audio;
     return () => audio.pause();
   }, []);
@@ -233,6 +250,24 @@ export default function SoundLibrary({ active }) {
       setPlayingId(null);
     }
   }, [active]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+    try {
+      localStorage.setItem(VOLUME_STORAGE_KEY, String(volume));
+    } catch {
+      // Sin almacenamiento: el volumen simplemente no se recuerda.
+    }
+  }, [volume]);
+
+  const toggleMute = () => {
+    if (volume > 0) {
+      lastVolumeRef.current = volume;
+      setVolume(0);
+    } else {
+      setVolume(lastVolumeRef.current || 0.8);
+    }
+  };
 
   const runSearch = useCallback(async (params, page = 1) => {
     const requestId = ++requestRef.current;
@@ -399,6 +434,27 @@ export default function SoundLibrary({ active }) {
               </option>
             ))}
           </select>
+
+          <div className="flex items-center gap-2" title="Volumen de escucha">
+            <button
+              onClick={toggleMute}
+              className="rounded-md p-1 text-neutral-300 hover:bg-white/5 hover:text-white"
+              aria-label={volume === 0 ? 'Activar sonido' : 'Silenciar'}
+            >
+              <VolumeIcon className="h-4 w-4" muted={volume === 0} />
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={Math.round(volume * 100)}
+              onChange={(e) => setVolume(Number(e.target.value) / 100)}
+              className="w-24 accent-brand-500"
+              aria-label="Volumen"
+            />
+            <span className="w-9 font-mono text-xs text-neutral-400">{Math.round(volume * 100)}%</span>
+          </div>
 
           <div className="ml-auto flex gap-2">
             <button

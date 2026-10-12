@@ -37,7 +37,7 @@ const activeEditorJobs = new Map();
 // Debe registrarse antes de que la app esté lista: permite que el <video> del
 // editor lea archivos locales con saltos (stream) desde cualquier origen.
 protocol.registerSchemesAsPrivileged([
-  { scheme: VIDEO_SCHEME, privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true } },
+  { scheme: VIDEO_SCHEME, privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true, corsEnabled: true } },
 ]);
 
 const iconPath = path.join(__dirname, '..', 'build', 'icon.png');

@@ -45,11 +45,12 @@ En la pestaña **"Editar vídeo"**:
 2. Haz clic o arrastra sobre la línea de tiempo para moverte por el vídeo (la línea azul es la posición actual).
 3. **Recortar el principio o el final:** arrastra los bordes laterales del tramo.
 4. **Quitar una parte del medio:** colócate donde empieza, pulsa **Cortar aquí**; colócate donde acaba y vuelve a pulsar **Cortar aquí**. Haz clic en el trozo del medio y pulsa **Eliminar tramo**. Las partes eliminadas se ven oscuras y rayadas, y la reproducción se las salta.
-5. Si te equivocas: **Deshacer** (Ctrl+Z) o **Restablecer** para volver al vídeo completo.
-6. Opcional: marca **Quitar el sonido**.
-7. Pulsa **Exportar vídeo** y elige dónde guardarlo. Se guarda como MP4 y el original no se toca.
+5. **Zoom de la línea de tiempo:** botones **+** / **−**, el deslizador de al lado o **Ctrl + rueda del ratón** (amplía donde está el ratón). Con zoom, la rueda sola desplaza la línea de tiempo y, al reproducir, la vista sigue al cabezal. **Ajustar** vuelve a mostrar el vídeo entero.
+6. Si te equivocas: **Deshacer** (Ctrl+Z) o **Restablecer** para volver al vídeo completo.
+7. **Volumen:** usa el control del altavoz (0–200 %). Se oye en la vista previa y se aplica al exportar; al 0 % el vídeo se exporta sin sonido. Doble clic en el control lo devuelve al 100 %.
+8. Pulsa **Exportar vídeo** y elige dónde guardarlo. Se guarda como MP4 y el original no se toca.
 
-Atajos de teclado: **Espacio** (reproducir/pausar), **S** (cortar aquí), **Supr** (eliminar tramo), **Ctrl+Z** (deshacer), **flechas** (±1 segundo, con Mayús ±5).
+Atajos de teclado: **Espacio** (reproducir/pausar), **S** (cortar aquí), **Supr** (eliminar tramo), **Ctrl+Z** (deshacer), **+** y **−** (zoom), **flechas** (±1 segundo, con Mayús ±5).
 
 Si un vídeo usa un formato que el reproductor no puede mostrar (por ejemplo algunos vídeos de móvil), la app prepara sola una vista previa; el vídeo exportado mantiene la calidad del original.
 
@@ -59,7 +60,7 @@ En la pestaña **"Sonidos"** tienes cientos de miles de efectos de sonido de Fre
 
 1. Elige una categoría (Coches, Drift, Disparos, Cámara, Gritos, Whoosh...) o escribe lo que buscas. Puedes buscar en español (*disparo*, *frenazo*, *gritos*), aunque en inglés suele haber más resultados.
 2. Filtra por **duración** y ordena por **más descargados**, **mejor valorados**, etc.
-3. Pulsa ▶ para escucharlo. Haz clic en la forma de onda para saltar a esa parte.
+3. Pulsa ▶ para escucharlo (el control del altavoz ajusta el volumen de escucha y se recuerda). Haz clic en la forma de onda para saltar a esa parte.
 4. Descárgalo en **MP3** o **WAV**. Se guarda en la carpeta **Sonidos**, dentro de tu carpeta de descargas de OS Media.
 5. Una vez descargado (marca verde ✓), **arrastra la fila directamente a Premiere, CapCut, DaVinci...**
 6. Pulsa la ⭐ para guardarlo en **Favoritos**.
