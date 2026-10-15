@@ -6,13 +6,15 @@ import DownloadTab from './components/DownloadTab';
 import GifConverter from './components/GifConverter';
 import VideoEditor from './components/VideoEditor';
 import SoundLibrary from './components/SoundLibrary';
-import { VideoIcon, GifIcon, ScissorsIcon, SoundIcon } from './components/icons';
+import VoiceChanger from './components/VoiceChanger';
+import { VideoIcon, GifIcon, ScissorsIcon, SoundIcon, MicIcon } from './components/icons';
 
 const TABS = [
   { key: 'download', label: 'Descargar', icon: VideoIcon },
   { key: 'gif', label: 'Vídeo a GIF', icon: GifIcon },
   { key: 'editor', label: 'Editar vídeo', icon: ScissorsIcon },
   { key: 'sounds', label: 'Sonidos', icon: SoundIcon },
+  { key: 'voice', label: 'Efectos de voz', icon: MicIcon },
 ];
 
 export default function App() {
@@ -171,6 +173,9 @@ export default function App() {
         </div>
         <div className={activeTab === 'sounds' ? '' : 'hidden'}>
           <SoundLibrary active={activeTab === 'sounds'} />
+        </div>
+        <div className={activeTab === 'voice' ? '' : 'hidden'}>
+          <VoiceChanger active={activeTab === 'voice'} />
         </div>
       </main>
 

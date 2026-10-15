@@ -20,6 +20,8 @@ const MIME_TYPES = {
   '.webm': 'video/webm',
   '.mkv': 'video/x-matroska',
   '.avi': 'video/x-msvideo',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
 };
 
 const registeredVideos = new Map();
@@ -85,7 +87,7 @@ function probeVideo(inputPath) {
   return new Promise((resolve, reject) => {
     const proc = spawn(
       getFfprobePath(),
-      ['-v', 'error', '-show_entries', 'format=duration:stream=codec_type', '-of', 'json', inputPath],
+      ['-v', 'error', '-show_entries', 'format=duration:stream=codec_type:stream_disposition=attached_pic', '-of', 'json', inputPath],
       { windowsHide: true }
     );
     let out = '';
@@ -100,7 +102,8 @@ function probeVideo(inputPath) {
         if (code !== 0 || Number.isNaN(duration)) throw new Error();
         resolve({
           duration,
-          hasVideo: streams.some((s) => s.codec_type === 'video'),
+          // La carátula de un MP3 aparece como pista de vídeo; no cuenta como vídeo.
+          hasVideo: streams.some((s) => s.codec_type === 'video' && !s.disposition?.attached_pic),
           hasAudio: streams.some((s) => s.codec_type === 'audio'),
         });
       } catch {

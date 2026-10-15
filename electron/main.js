@@ -1,5 +1,5 @@
 // OS Media — Made by OSUA Studio
-const { app, BrowserWindow, ipcMain, dialog, shell, protocol, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, protocol, nativeImage, systemPreferences } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { ensureBinaries, checkAndUpdateYtDlp, getInstalledYtDlpVersion, getFfmpegPath, getDenoPath } = require('./binaries');
@@ -25,6 +25,14 @@ const {
   findDownloaded,
   isInsideSoundsDir,
 } = require('./sounds');
+const {
+  VOICE_EFFECTS,
+  saveRecording,
+  renderVoice,
+  renderVoicePreview,
+  removeTempFile,
+  cleanupVoiceTemp,
+} = require('./voice');
 const { setupUpdater, checkForUpdates, downloadUpdate, quitAndInstall } = require('./updater');
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -32,7 +40,7 @@ const isDev = process.env.NODE_ENV === 'development';
 let mainWindow;
 const activeDownloads = new Map();
 const activeGifConversions = new Map();
-const activeEditorJobs = new Map();
+const activeJobs = new Map();
 
 // Debe registrarse antes de que la app esté lista: permite que el <video> del
 // editor lea archivos locales con saltos (stream) desde cualquier origen.
@@ -100,7 +108,10 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on('will-quit', cleanupPreviews);
+app.on('will-quit', () => {
+  cleanupPreviews();
+  cleanupVoiceTemp();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -245,9 +256,9 @@ ipcMain.handle('gif:cancel', async (_event, id) => {
   return false;
 });
 
-function trackEditorJob(channel, { promise, cancel }, buildDonePayload, errorMessage) {
+function trackJob(channel, { promise, cancel }, buildDonePayload, errorMessage) {
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  activeEditorJobs.set(id, cancel);
+  activeJobs.set(id, cancel);
   promise
     .then((result) => {
       mainWindow?.webContents.send(channel, { id, ok: true, ...buildDonePayload(result) });
@@ -257,7 +268,7 @@ function trackEditorJob(channel, { promise, cancel }, buildDonePayload, errorMes
       mainWindow?.webContents.send(channel, { id, ok: false, message: errorMessage, details: err.message });
     })
     .finally(() => {
-      activeEditorJobs.delete(id);
+      activeJobs.delete(id);
     });
   return id;
 }
@@ -283,7 +294,7 @@ ipcMain.handle('editor:make-preview', async (_event, { inputPath, duration }) =>
     duration,
     onProgress: (percent) => mainWindow?.webContents.send('editor:preview-progress', { id, percent }),
   });
-  id = trackEditorJob(
+  id = trackJob(
     'editor:preview-done',
     job,
     ({ outputPath }) => ({ url: registerVideo(outputPath) }),
@@ -312,7 +323,7 @@ ipcMain.handle('editor:export', async (_event, options) => {
     ...options,
     onProgress: (percent) => mainWindow?.webContents.send('editor:export-progress', { id, percent }),
   });
-  id = trackEditorJob(
+  id = trackJob(
     'editor:export-done',
     job,
     ({ outputPath, sizeBytes }) => ({ outputPath, sizeBytes }),
@@ -321,15 +332,120 @@ ipcMain.handle('editor:export', async (_event, options) => {
   return { id };
 });
 
-ipcMain.handle('editor:cancel', async (_event, id) => {
-  const cancel = activeEditorJobs.get(id);
+function cancelJob(_event, id) {
+  const cancel = activeJobs.get(id);
   if (cancel) {
     cancel();
-    activeEditorJobs.delete(id);
+    activeJobs.delete(id);
     return true;
   }
   return false;
+}
+
+ipcMain.handle('editor:cancel', cancelJob);
+
+ipcMain.handle('voice:get-effects', async () => VOICE_EFFECTS);
+
+ipcMain.handle('dialog:choose-media', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [
+      {
+        name: 'Audio o vídeo',
+        extensions: ['mp3', 'wav', 'm4a', 'ogg', 'opus', 'flac', 'aac', 'mp4', 'mov', 'mkv', 'webm', 'avi', 'm4v'],
+      },
+    ],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
 });
+
+ipcMain.handle('voice:open', async (_event, inputPath) => {
+  try {
+    const info = await probeVideo(inputPath);
+    if (!info.hasAudio) return { ok: false, error: 'Este archivo no tiene sonido.' };
+    return { ok: true, duration: info.duration, hasVideo: info.hasVideo };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo abrir el archivo. Comprueba que es un audio o vídeo válido.', details: err.message };
+  }
+});
+
+// En macOS el sistema pide permiso para el micro; en Windows no hace falta.
+ipcMain.handle('voice:mic-access', async () => {
+  if (process.platform !== 'darwin') return true;
+  return systemPreferences.askForMediaAccess('microphone');
+});
+
+ipcMain.handle('voice:save-recording', async (_event, bytes) => {
+  try {
+    const filePath = await saveRecording(bytes);
+    const info = await probeVideo(filePath);
+    return { ok: true, filePath, duration: info.duration };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo guardar la grabación.', details: err.message };
+  }
+});
+
+ipcMain.handle('voice:preview', async (_event, { inputPath, effects, volume, duration }) => {
+  let id;
+  const job = renderVoicePreview({
+    inputPath,
+    effects,
+    volume,
+    duration,
+    onProgress: (percent) => mainWindow?.webContents.send('voice:preview-progress', { id, percent }),
+  });
+  id = trackJob(
+    'voice:preview-done',
+    job,
+    ({ outputPath }) => ({ url: registerVideo(outputPath), filePath: outputPath }),
+    'No se pudieron aplicar los efectos a este audio.'
+  );
+  return { id };
+});
+
+// Solo borra archivos temporales creados por voice.js, nunca rutas arbitrarias.
+ipcMain.handle('voice:discard-preview', async (_event, filePath) => removeTempFile(filePath));
+
+ipcMain.handle('voice:choose-output', async (_event, { inputPath, format, suggestedName, isRecording }) => {
+  const ext = format === 'video' ? path.extname(inputPath).toLowerCase() : `.${format}`;
+  const dir = isRecording
+    ? readSettings().destDir || path.join(app.getPath('desktop'), 'OS Media')
+    : path.dirname(inputPath);
+  fs.mkdirSync(dir, { recursive: true });
+  const filterName = { mp3: 'Audio MP3', wav: 'Audio WAV' }[format] || 'Vídeo';
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: path.join(dir, `${path.basename(suggestedName || 'voz')}${ext}`),
+    filters: [{ name: filterName, extensions: [ext.slice(1)] }],
+  });
+  if (result.canceled || !result.filePath) return null;
+  if (path.resolve(result.filePath) === path.resolve(inputPath)) {
+    return { error: 'Elige un nombre distinto al del archivo original.' };
+  }
+  return { outputPath: result.filePath };
+});
+
+ipcMain.handle('voice:export', async (_event, { inputPath, outputPath, effects, volume, format, duration }) => {
+  let id;
+  const job = renderVoice({
+    inputPath,
+    outputPath,
+    effects,
+    volume,
+    format,
+    duration,
+    onProgress: (percent) => mainWindow?.webContents.send('voice:export-progress', { id, percent }),
+  });
+  id = trackJob(
+    'voice:export-done',
+    job,
+    ({ outputPath: savedPath, sizeBytes }) => ({ outputPath: savedPath, sizeBytes }),
+    'No se pudo exportar el audio con los efectos.'
+  );
+  return { id };
+});
+
+ipcMain.handle('voice:cancel', cancelJob);
 
 ipcMain.handle('sounds:get-info', async () => ({
   categories: SOUND_CATEGORIES.map(({ key, label }) => ({ key, label })),

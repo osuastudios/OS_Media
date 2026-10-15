@@ -54,7 +54,10 @@
     "mac": {
       "target": "dmg",
       "icon": "build/icon.png",
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "OS Media usa el micrófono para grabar tu voz en la pestaña Efectos de voz."
+      }
     },
     "publish": {
       "provider": "github",

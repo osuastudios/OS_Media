@@ -187,3 +187,12 @@ export function VolumeIcon({ className, muted }) {
     </svg>
   );
 }
+
+export function MicIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="9" y="3.5" width="6" height="11" rx="3" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" />
+    </svg>
+  );
+}

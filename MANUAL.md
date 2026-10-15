@@ -67,6 +67,18 @@ En la pestaña **"Sonidos"** tienes cientos de miles de efectos de sonido de Fre
 
 La primera vez puede pedirte una clave gratuita de Freesound; la propia pestaña explica cómo conseguirla en un minuto.
 
+## Efectos de voz
+
+En la pestaña **"Efectos de voz"** puedes cambiar la voz de un audio o de un vídeo.
+
+1. Arrastra un audio o vídeo (o haz clic para elegirlo), o pulsa **Grabar con el micro** para grabarte en el momento.
+2. Elige uno o varios efectos: **Ardilla, Monstruo, Robot, Altavoz, Teléfono, Walkie/radio, Bajo el agua, Distorsión, 8-bit, Eco, Catedral** y **Al revés**. Se pueden combinar (por ejemplo, Robot + Eco).
+3. Ajusta la **intensidad** de cada efecto y el **volumen final** con las barras.
+4. Pulsa ▶ para escucharlo. Con **Con efectos / Original** comparas las dos versiones sin perder el punto.
+5. Elige **MP3**, **WAV** o, si metiste un vídeo, **Vídeo con la voz cambiada** (la imagen queda igual), y pulsa **Exportar**.
+
+Lo que oyes al escuchar es exactamente lo que se guarda. Las grabaciones se guardan por defecto en tu carpeta de descargas de OS Media; los archivos subidos, junto al original.
+
 ## Ajustes (el engranaje de arriba)
 
 - **Cookies del navegador:** actívalo si YouTube bloquea una descarga. Usa tu sesión de **Firefox** (funciona mucho mejor que Chrome/Edge, que fallan si el navegador está abierto o por cómo cifran las cookies en Windows).
